@@ -4,6 +4,7 @@ Use the Blue Iris macros feature to display transaction data from Verifone Ruby 
 #  Prereqs:
 python -m pip install pyserial
 
+#  Run
 python serial_capture.py
 
 # Serial Pinout
