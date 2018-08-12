@@ -5,19 +5,26 @@ import os
 
 
 from time import sleep
-
-THIS_FOLDER = os.path.dirname(os.path.abspath(__file__))
+from collections import deque
 
 # ***********CONFIG*************
+THIS_FOLDER = os.path.dirname(os.path.abspath(__file__))
+
 #Register Name for record keeping purposes (Change this to whatever you want)
-registerNUM = "101"
+registerNUM = "102"
 
 #Serial Port/RS232 com port
-PORT_COM = "COM1"
+PORT_COM = "COM5"
 
 #Name of the clipboard file that will hold the current transaction data
-clipboardFile = "log_101.txt"
-#*******************************
+clipboardFile = "log_102.txt"
+
+#The maximum amount of transaction lines to display on screen
+maxOverlayLines = 9
+
+#The time to keep the last transaction on screen after it has been completed (seconds)
+wipeTime = 4.5
+# *******************************
 
 #establish serial instance
 ser = serial.Serial(
@@ -28,7 +35,7 @@ ser = serial.Serial(
     bytesize=serial.EIGHTBITS,\
         timeout=0)
 
-print("connected to: " + ser.portstr)
+print("Connected to: " + ser.portstr)
 
 #Wrties the transaction to a folder with the date as the file name for all the transactions captured
 def writeToDailyLog(lineData):
@@ -38,13 +45,17 @@ def writeToDailyLog(lineData):
 #Writes current transaction to the clipboard log file
 def writeToTransClipboard(clipboardData):
     try:
-        with open(clipboardFile, "a+") as f:
-            f.write(clipboardData)
+        with open(clipboardFile, 'r') as file:
+            lines = deque(file, maxOverlayLines)
+            lines.append(clipboardData)
+        with open(clipboardFile, 'w') as file:
+            file.writelines(lines)
             print(clipboardData)
+
     except PermissionError:
         print("Permission error occured in the writeToTransClipboard() function, trying again...")
         sleep(1)
-        
+
 #Wipe the clipboard file, called when the current transaction is cashed out and a new transaction begins
 def wipeTransClipboard():
     open(clipboardFile, 'w').close()
@@ -65,7 +76,7 @@ while True:
             if "TRAN#" in formated_text:
                 writeToDailyLog("***********************************************\n")                               
                 writeToDailyLog(formated_text)               
-                sleep(4.5)
+                sleep(wipeTime)
                 wipeTransClipboard()
             else:
                 print(formated_text)
